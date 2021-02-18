@@ -1,0 +1,11 @@
+---
+ - hosts: all
+   become: true
+   vars:
+     package: apache2
+     service_apache: apache2
+     tasks:
+      - name: Install Package
+        apt: name={{ package }} state=latest update_cache=true
+      - name: Service Start
+        service: name={{ service_apache }} state=started

@@ -1,0 +1,76 @@
+---
+ - hosts: web1
+   become: true
+   vars:     
+     package: apache2
+     service_apache: apache2
+   tasks:    
+    - name: Install Package
+      apt: name={{ package }} state=present update_cache=true
+    - name: Service Start
+      service: name={{ service_apache }} state=started
+   
+    - name: Install Packages
+      #command: apt update
+      #path: /usr/bin
+      apt: name={{ item }} state=present update_cache=true
+      with_items:
+       - mysql-server
+       - mysql-client
+       - php
+       - libapache2-mod-php
+       - php-mcrypt
+       - php-mysql
+       - unzip
+       - wget
+      #service: name={{ item }} state=started
+      notify: restart package
+
+#  handlers:
+#   - name: restart package
+#     service: name=apache2 state=restart
+  
+    - name: Set User ID and Password  
+      command: "mysqladmin -u root password rootpassword"
+ #&& touch /var/mysqlrootset
+      #path: /usr/bin
+      #creates: /var/mysqlrootset
+
+    - name: Execute links installation
+      command: wget https://gitlab.com/roybhaskar9/devops/raw/master/coding/chef/chefwordpress/files/default/mysqlcommands
+      #path: /usr/bin
+      #chdir: /tmp
+      dest: /tmp/mysqlcommands
+
+    - name: Set User ID and Password
+      command: mysql -uroot -prootpassword < /tmp/mysqlcommands #&& touch /var/mysqlimportcomplete
+      #path: /usr/bin
+      #creates: /var/mysqlimportcomplete
+
+    - name: wget https://wordpress.org/latest.zip
+      command: wget https://wordpress.org/latest.zip
+      #path: /usr/bin
+      chdir: /tmp
+      creates: /tmp/latest.zip
+
+    - name: Unzip latest zip file
+      command: unzip /tmp/latest.zip -d /var/www/html
+      #path: /usr/bin
+      creates: /var/www/html/wordpress/index.php
+
+    - name: sudo cp wp-config-sample.php /var/www/html/wordpress/wp-config.php
+      command: wget https://gitlab.com/roybhaskar9/devops/raw/master/coding/chef/chefwordpress/files/default/wp-config-sample.php -O wp-config.php
+      chdir: /var/www/html/wordpress/
+      creates: /var/www/html/wordpress/index.php
+
+    - name: Create a file
+      copy:
+         dest: /var/www/html/wordpress
+         owner: www-data
+         group: www-data
+         mode: 0775
+         state: directory
+
+   handlers:
+    - name: restart package
+      service: name=apache2 state=restart
