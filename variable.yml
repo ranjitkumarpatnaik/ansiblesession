@@ -2,7 +2,7 @@
  - hosts: all 
    become: true 
    vars: 
-     varx: firefox
+     varx: lynx
    tasks:
     - name: Install Package 
       apt: name={{ varx }} state=latest
